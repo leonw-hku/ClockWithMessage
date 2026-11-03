@@ -20,7 +20,7 @@ st.markdown("""
         /* 2. Fix the height of the Tab container to exactly match the screen */
         .stTabs [data-baseweb="tab-panel"] {
             padding: 0 !important;
-            height: calc(100vh - 55px) !important; /* 55px leaves room for the tab titles */
+            height: calc(100vh - 55px) !important; 
             overflow: hidden !important;
         }
 
@@ -44,29 +44,64 @@ DEFAULT_MODES = [
     {"name": "Maintenance", "bg": "#333333", "fg": "#ffffff", "msg": "Maintenance", "time": ""}
 ]
 
+DEFAULT_FONTS = {
+    "date": "min(9vw, 22vh)",
+    "time": "min(20vw, 22vh)",
+    "msg": "min(8vw, 12vh)"
+}
+
 def load_settings():
+    # If no file exists, create the default one
     if not os.path.exists(SETTINGS_FILE):
+        default_data = {"modes": DEFAULT_MODES, "fonts": DEFAULT_FONTS}
         with open(SETTINGS_FILE, 'w') as f:
-            json.dump(DEFAULT_MODES, f, indent=4)
+            json.dump(default_data, f, indent=4)
+        return default_data
+        
+    # Read existing file
     with open(SETTINGS_FILE, 'r') as f:
-        return json.load(f)
+        data = json.load(f)
+        
+        # MIGRATION: If the user has the older version (list instead of dict), upgrade it!
+        if isinstance(data, list):
+            data = {"modes": data, "fonts": DEFAULT_FONTS}
+            save_settings(data)
+            
+        return data
 
 def save_settings(data):
     with open(SETTINGS_FILE, 'w') as f:
         json.dump(data, f, indent=4)
 
+
 # --- APP LAYOUT ---
 tab_display, tab_settings = st.tabs(["⏱️ Clock Display", "⚙️ Settings"])
 
+# Load current settings globally
+current_settings = load_settings()
+current_modes = current_settings.get("modes", DEFAULT_MODES)
+current_fonts = current_settings.get("fonts", DEFAULT_FONTS)
+
 # --- 1. SETTINGS TAB ---
 with tab_settings:
-    st.header("Configure Clock Modes")
-    st.write("Leave the 'Auto Start' field blank if you do not want the clock to trigger automatically.")
-    
-    current_settings = load_settings()
-    new_settings = []
-    
     with st.form("settings_form"):
+        
+        # --- FONT SETTINGS SECTION ---
+        st.subheader("1. Font Sizes (CSS)")
+        st.caption("You can use CSS dynamic sizing like `min(9vw, 22vh)` or fixed sizes like `100px` or `5em`.")
+        
+        font_cols = st.columns(3)
+        date_font = font_cols[0].text_input("Date Font Size", value=current_fonts.get("date", DEFAULT_FONTS["date"]))
+        time_font = font_cols[1].text_input("Time Font Size", value=current_fonts.get("time", DEFAULT_FONTS["time"]))
+        msg_font = font_cols[2].text_input("Message Font Size", value=current_fonts.get("msg", DEFAULT_FONTS["msg"]))
+
+        st.divider()
+
+        # --- MODE SETTINGS SECTION ---
+        st.subheader("2. Clock Modes")
+        st.write("Leave 'Auto Start' blank if you do not want it to trigger automatically.")
+        
+        new_modes = []
         cols = st.columns([1, 2, 1, 1, 3, 2])
         cols[0].markdown("**Mode #**")
         cols[1].markdown("**Mode Name**")
@@ -76,7 +111,7 @@ with tab_settings:
         cols[5].markdown("**Auto Start (HH:MM)**")
         
         for i in range(5):
-            mode = current_settings[i] if i < len(current_settings) else DEFAULT_MODES[i]
+            mode = current_modes[i] if i < len(current_modes) else DEFAULT_MODES[i]
             cols = st.columns([1, 2, 1, 1, 3, 2])
             
             cols[0].markdown(f"### {i+1}")
@@ -86,17 +121,28 @@ with tab_settings:
             msg = cols[4].text_input("Msg", value=mode.get("msg", ""), key=f"msg_{i}", label_visibility="collapsed")
             time_val = cols[5].text_input("Time", value=mode.get("time", ""), key=f"time_{i}", placeholder="e.g. 14:30", label_visibility="collapsed")
             
-            new_settings.append({
+            new_modes.append({
                 "name": name, "bg": bg, "fg": fg, "msg": msg, "time": time_val.strip()
             })
             
-        if st.form_submit_button("💾 Save Settings"):
-            save_settings(new_settings)
+        # Submit Button
+        if st.form_submit_button("💾 Save All Settings"):
+            new_settings_data = {
+                "modes": new_modes,
+                "fonts": {
+                    "date": date_font.strip(),
+                    "time": time_font.strip(),
+                    "msg": msg_font.strip()
+                }
+            }
+            save_settings(new_settings_data)
             st.success("Settings saved! Go to the 'Clock Display' tab to see changes.")
+
 
 # --- 2. DISPLAY TAB ---
 with tab_display:
-    settings_json = json.dumps(load_settings())
+    # Pass ONLY the modes array to JS so the buttons generate correctly
+    settings_json = json.dumps(current_modes)
     
     html_code = f"""
     <!DOCTYPE html>
@@ -133,9 +179,9 @@ with tab_display:
                 overflow: hidden;
             }}
             
-            /* DATE AND CLOCK ARE NOW SIZED IDENTICALLY (capped at 22vh) */
+            /* DYNAMIC FONTS LOADED FROM SETTINGS */
             #date-label {{ 
-                font-size: min(9vw, 22vh); /* 9vw prevents overflow on vertical screens */
+                font-size: {current_fonts.get('date', 'min(9vw, 22vh)')}; 
                 font-weight: 800; 
                 line-height: 0.85;
                 margin-bottom: 2vh; 
@@ -143,14 +189,14 @@ with tab_display:
                 letter-spacing: -0.1vw;
             }}
             #clock-label {{ 
-                font-size: min(20vw, 22vh); /* 20vw fits the shorter text on vertical screens */
+                font-size: {current_fonts.get('time', 'min(20vw, 22vh)')}; 
                 font-weight: 800; 
                 line-height: 0.85; 
                 margin-bottom: 3vh; 
                 letter-spacing: -0.2vw;
             }}
             #msg-label {{ 
-                font-size: min(8vw, 12vh); 
+                font-size: {current_fonts.get('msg', 'min(8vw, 12vh)')}; 
                 font-weight: 700; 
             }}
             
@@ -223,8 +269,6 @@ with tab_display:
                 document.getElementById('clock-label').innerText = `${{hh}}:${{mm}}:${{ss}}`;
 
                 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                
-                // --- CHANGED TO SHORT FORM WEEKDAYS ---
                 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
                 
                 const dd = String(now.getDate()).padStart(2, '0');
