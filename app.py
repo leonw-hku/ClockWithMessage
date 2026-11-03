@@ -5,11 +5,29 @@ import os
 # --- CONFIGURATION ---
 st.set_page_config(page_title="Dynamic Lab Clock", layout="wide")
 
-# Hide extra Streamlit padding to make the clock as big as possible
+# STREAMLIT FULLSCREEN HACK
+# 1. Removes all Streamlit padding so it touches the edges of the screen
+# 2. Forces the HTML iframe component to be dynamically linked to the exact size of your browser window!
 st.markdown("""
     <style>
-        .block-container { padding-top: 2rem; padding-bottom: 0rem; }
+        .block-container { 
+            padding: 0rem !important; 
+            max-width: 100% !important; 
+        }
         header { visibility: hidden; }
+        footer { visibility: hidden; }
+        
+        /* Forces the tab content area to stretch */
+        .stTabs [data-baseweb="tab-panel"] {
+            padding: 0 !important;
+        }
+
+        /* Forces the HTML iframe to perfectly fit the screen height minus the tab bar */
+        iframe[title="streamlit_app.components_v1.html"] {
+            height: calc(100vh - 60px) !important;
+            width: 100vw !important;
+            border: none !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -45,9 +63,7 @@ with tab_settings:
     current_settings = load_settings()
     new_settings = []
     
-    # Create a form to hold the 5 modes
     with st.form("settings_form"):
-        # Header Row
         cols = st.columns([1, 2, 1, 1, 3, 2])
         cols[0].markdown("**Mode #**")
         cols[1].markdown("**Mode Name**")
@@ -71,19 +87,15 @@ with tab_settings:
                 "name": name, "bg": bg, "fg": fg, "msg": msg, "time": time_val.strip()
             })
             
-        submitted = st.form_submit_button("💾 Save Settings")
-        if submitted:
+        if st.form_submit_button("💾 Save Settings"):
             save_settings(new_settings)
             st.success("Settings saved! Go to the 'Clock Display' tab to see changes.")
 
-
 # --- 2. DISPLAY TAB ---
 with tab_display:
-    # We pass the JSON settings directly into the Javascript inside the HTML
     settings_json = json.dumps(load_settings())
     
-    # We use CSS `min(vw, vh)` to dynamically scale fonts perfectly to screen size.
-    # We use vanilla Javascript to run the clock quickly in the browser.
+    # Highly dynamic HTML/CSS
     html_code = f"""
     <!DOCTYPE html>
     <html>
@@ -104,6 +116,8 @@ with tab_display:
                 flex-direction: column;
                 overflow: hidden;
             }}
+            
+            /* Center Content stretches to fill space automatically */
             #content {{
                 flex-grow: 1;
                 display: flex;
@@ -111,30 +125,61 @@ with tab_display:
                 justify-content: center;
                 align-items: center;
                 text-align: center;
+                padding: 2vw;
             }}
-            /* Dynamic sizing utilizing viewport width/height */
-            #date-label {{ font-size: min(3.5vw, 6vh); margin-bottom: 0.5vh; opacity: 0.9; }}
-            #clock-label {{ font-size: min(15vw, 22vh); font-weight: bold; line-height: 1; margin-bottom: 1vh; }}
-            #msg-label {{ font-size: min(6vw, 10vh); font-weight: 600; }}
             
+            /* MASSIVE, Dynamic Sizing */
+            #date-label {{ 
+                font-size: min(5vw, 8vh); 
+                margin-bottom: 2vh; 
+                opacity: 0.9; 
+                font-weight: 500;
+            }}
+            #clock-label {{ 
+                font-size: min(20vw, 32vh); 
+                font-weight: 800; 
+                line-height: 0.85; 
+                margin-bottom: 2vh; 
+                letter-spacing: -0.2vw;
+            }}
+            #msg-label {{ 
+                font-size: min(8vw, 15vh); 
+                font-weight: 700; 
+            }}
+            
+            /* Fluid, Non-Fixed Buttons */
             #controls {{
-                padding: 2vh 0;
                 display: flex;
+                flex-wrap: wrap;       /* Allows buttons to flow to next line on thin screens */
                 justify-content: center;
-                gap: 1vw;
-                background: rgba(0,0,0,0.2);
+                align-items: center;
+                gap: 2vw;              /* Dynamic spacing */
+                padding: 4vh 2vw;      /* Dynamic padding */
+                background: rgba(0,0,0,0.15);
+                width: 100%;
+                box-sizing: border-box;
             }}
+            
             button {{
-                padding: 1.5vh 2vw;
-                font-size: min(2vw, 3vh);
+                padding: 2vh 3vw;
+                font-size: min(3.5vw, 5vh); /* Massive text on buttons */
                 cursor: pointer;
-                border: none; border-radius: 8px;
-                background-color: #ffffff; color: #000000;
-                font-weight: bold;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-                transition: transform 0.1s;
+                border: none; 
+                border-radius: 1vw; /* Dynamic rounded corners */
+                background-color: rgba(255, 255, 255, 0.9); 
+                color: #000000;
+                font-weight: 800;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+                transition: transform 0.1s ease-in-out, background-color 0.2s;
+                flex-grow: 1; /* Allows buttons to stretch and balance out perfectly */
+                max-width: 300px; /* Prevents them from getting ridiculously wide */
             }}
-            button:active {{ transform: scale(0.95); }}
+            button:active {{ 
+                transform: scale(0.92); 
+            }}
+            button:hover {{
+                background-color: #ffffff;
+            }}
         </style>
     </head>
     <body>
@@ -156,7 +201,6 @@ with tab_display:
                 document.getElementById('msg-label').innerText = mode.msg;
             }}
 
-            // Generate buttons based on Streamlit settings
             const controls = document.getElementById('controls');
             modes.forEach((mode, index) => {{
                 const btn = document.createElement('button');
@@ -168,13 +212,11 @@ with tab_display:
             function updateClock() {{
                 const now = new Date();
                 
-                // Formulate Clock HH:MM:SS
                 const hh = String(now.getHours()).padStart(2, '0');
                 const mm = String(now.getMinutes()).padStart(2, '0');
                 const ss = String(now.getSeconds()).padStart(2, '0');
                 document.getElementById('clock-label').innerText = `${{hh}}:${{mm}}:${{ss}}`;
 
-                // Formulate Date 'dd mmm yyyy (weekday)'
                 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
                 const dd = String(now.getDate()).padStart(2, '0');
@@ -183,7 +225,6 @@ with tab_display:
                 const weekday = days[now.getDay()];
                 document.getElementById('date-label').innerText = `${{dd}} ${{mmm}} ${{yyyy}} (${{weekday}})`;
 
-                // Auto-Switch Logic
                 const currentHM = `${{hh}}:${{mm}}`;
                 if (currentHM !== lastCheckedMinute) {{
                     lastCheckedMinute = currentHM;
@@ -195,12 +236,12 @@ with tab_display:
                 }}
             }}
 
-            setMode(0); // Start on first mode
-            setInterval(updateClock, 200); // Check multiple times a second for exact tick
+            setMode(0);
+            setInterval(updateClock, 200); 
         </script>
     </body>
     </html>
     """
     
-    # Inject the HTML/JS into Streamlit
-    st.components.v1.html(html_code, height=750)
+    # Render the component (Height acts as a fallback, CSS overrides it)
+    st.components.v1.html(html_code, height=800)
