@@ -6,8 +6,6 @@ import os
 st.set_page_config(page_title="Dynamic Lab Clock", layout="wide")
 
 # STREAMLIT FULLSCREEN HACK
-# 1. Removes all Streamlit padding so it touches the edges of the screen
-# 2. Forces the HTML iframe component to be dynamically linked to the exact size of your browser window!
 st.markdown("""
     <style>
         .block-container { 
@@ -95,7 +93,6 @@ with tab_settings:
 with tab_display:
     settings_json = json.dumps(load_settings())
     
-    # Highly dynamic HTML/CSS
     html_code = f"""
     <!DOCTYPE html>
     <html>
@@ -147,32 +144,32 @@ with tab_display:
                 font-weight: 700; 
             }}
             
-            /* Fluid, Non-Fixed Buttons */
+            /* SMALLER, Fluid, Non-Fixed Buttons */
             #controls {{
                 display: flex;
-                flex-wrap: wrap;       /* Allows buttons to flow to next line on thin screens */
+                flex-wrap: wrap;       
                 justify-content: center;
                 align-items: center;
-                gap: 2vw;              /* Dynamic spacing */
-                padding: 4vh 2vw;      /* Dynamic padding */
+                gap: 1vw;              /* Tighter gap */
+                padding: 1.5vh 2vw;    /* Reduced padding footprint */
                 background: rgba(0,0,0,0.15);
                 width: 100%;
                 box-sizing: border-box;
             }}
             
             button {{
-                padding: 2vh 3vw;
-                font-size: min(3.5vw, 5vh); /* Massive text on buttons */
+                padding: 1vh 1.5vw;
+                font-size: min(1.8vw, 2.5vh); /* Smaller text on buttons */
                 cursor: pointer;
                 border: none; 
-                border-radius: 1vw; /* Dynamic rounded corners */
+                border-radius: 8px; /* Standard pill shape */
                 background-color: rgba(255, 255, 255, 0.9); 
                 color: #000000;
-                font-weight: 800;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+                font-weight: 700;
+                box-shadow: 0 3px 6px rgba(0,0,0,0.3);
                 transition: transform 0.1s ease-in-out, background-color 0.2s;
-                flex-grow: 1; /* Allows buttons to stretch and balance out perfectly */
-                max-width: 300px; /* Prevents them from getting ridiculously wide */
+                flex-grow: 1; 
+                max-width: 160px; /* Forces them to stay small rather than stretch wildly */
             }}
             button:active {{ 
                 transform: scale(0.92); 
@@ -243,5 +240,4 @@ with tab_display:
     </html>
     """
     
-    # Render the component (Height acts as a fallback, CSS overrides it)
     st.components.v1.html(html_code, height=800)
