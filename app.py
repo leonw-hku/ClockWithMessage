@@ -5,28 +5,31 @@ import os
 # --- CONFIGURATION ---
 st.set_page_config(page_title="Dynamic Lab Clock", layout="wide")
 
-# AGGRESSIVE FULLSCREEN HACK - Prevents any scrolling
+# AGGRESSIVE FULLSCREEN HACK - Prevents any scrolling and fixes bottom cut-off
 st.markdown("""
     <style>
-        /* Remove all default padding from Streamlit */
+        /* Remove default padding */
         .block-container { 
-            padding: 0rem !important; 
+            padding-top: 1rem !important; 
+            padding-bottom: 0rem !important; 
+            padding-left: 0rem !important;
+            padding-right: 0rem !important;
             max-width: 100% !important; 
             overflow: hidden !important;
         }
         header { visibility: hidden; height: 0px !important; }
         footer { visibility: hidden; height: 0px !important; }
         
-        /* Remove padding inside the tabs and fix height to prevent scroll */
+        /* Remove padding inside tabs */
         .stTabs [data-baseweb="tab-panel"] {
             padding: 0 !important;
-            height: calc(100vh - 50px); /* 50px accounts for the tab headers */
             overflow: hidden !important;
         }
 
-        /* Force the HTML container to perfectly fit the remaining screen height */
+        /* Force the HTML container to perfectly fit screen minus the tab bar */
+        /* Changed to 95px to guarantee the buttons are not pushed off the bottom */
         iframe[title="streamlit_app.components_v1.html"] {
-            height: calc(100vh - 55px) !important;
+            height: calc(100vh - 95px) !important;
             width: 100vw !important;
             border: none !important;
             overflow: hidden !important;
@@ -107,15 +110,17 @@ with tab_display:
                 --bg-color: #000000;
                 --font-color: #ffffff;
             }}
+            * {{
+                box-sizing: border-box;
+            }}
             body, html {{
                 margin: 0; padding: 0;
-                width: 100%; height: 100%;
+                width: 100%; height: 100vh; /* Locks exactly to iframe height */
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 background-color: var(--bg-color);
                 color: var(--font-color);
                 transition: background-color 0.5s ease, color 0.5s ease;
                 
-                /* Lock the body to exactly the window size */
                 display: flex;
                 flex-direction: column;
                 overflow: hidden; 
@@ -150,33 +155,33 @@ with tab_display:
                 font-weight: 700; 
             }}
             
-            /* BUTTON AREA: Fixed percentage height, perfectly side-by-side */
+            /* BUTTON AREA: Fixes the cut-off issue */
             #controls {{
-                height: 10vh; /* Always exactly 10% of the screen height */
-                min-height: 50px;
+                flex-shrink: 0; /* CRITICAL: Prevents browser from ever squishing this off-screen */
                 display: flex;
                 justify-content: center;
-                align-items: stretch; /* Stretches buttons to fill the bar height */
+                align-items: stretch;
                 gap: 1vw;
-                padding: 1.5vh 1vw;
+                padding: 2vh 1vw;
                 background: rgba(0,0,0,0.15);
-                box-sizing: border-box;
                 width: 100%;
             }}
             
             button {{
-                flex: 1; /* Forces all buttons to be exactly equal width */
-                min-width: 0; /* Prevents text from forcing button wider than screen */
-                font-size: min(2vw, 3vh); /* Dynamically shrinks text so it fits */
+                flex: 1; 
+                min-width: 0; 
+                padding: 1.5vh 0; /* Vertical padding controls height */
+                font-size: min(2.5vw, 3vh); /* Scales dynamically */
                 cursor: pointer;
                 border: none; 
-                border-radius: 8px; 
+                border-radius: 10px; 
                 background-color: rgba(255, 255, 255, 0.9); 
                 color: #000000;
                 font-weight: 700;
-                box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
                 transition: transform 0.1s ease-in-out, background-color 0.2s;
-                /* Text truncation if screen gets insanely tiny */
+                
+                /* Keeps text on one line neatly */
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -217,8 +222,6 @@ with tab_display:
             }});
 
             function updateClock() {{
-                // new Date() pulls directly from your computer OS internal clock
-                // It is accurate to the millisecond, even if the PC wakes up from sleep!
                 const now = new Date();
                 
                 const hh = String(now.getHours()).padStart(2, '0');
@@ -252,5 +255,4 @@ with tab_display:
     </html>
     """
     
-    # st.components height doesn't matter anymore, the CSS forces it to match the screen!
     st.components.v1.html(html_code, height=800)
