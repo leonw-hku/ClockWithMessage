@@ -5,30 +5,28 @@ import os
 # --- CONFIGURATION ---
 st.set_page_config(page_title="Dynamic Lab Clock", layout="wide")
 
-# AGGRESSIVE FULLSCREEN HACK - Adjusted to 80% height
+# BULLETPROOF FULLSCREEN HACK
 st.markdown("""
     <style>
-        /* Remove default padding */
+        /* 1. Remove all Streamlit margins and padding */
         .block-container { 
-            padding-top: 1rem !important; 
-            padding-bottom: 0rem !important; 
-            padding-left: 0rem !important;
-            padding-right: 0rem !important;
+            padding: 0rem !important; 
             max-width: 100% !important; 
             overflow: hidden !important;
         }
-        header { visibility: hidden; height: 0px !important; }
-        footer { visibility: hidden; height: 0px !important; }
+        header { visibility: hidden !important; height: 0px !important; }
+        footer { visibility: hidden !important; height: 0px !important; }
         
-        /* Remove padding inside tabs */
+        /* 2. Fix the height of the Tab container to exactly match the screen */
         .stTabs [data-baseweb="tab-panel"] {
             padding: 0 !important;
+            height: calc(100vh - 55px) !important; /* 55px leaves room for the tab titles */
             overflow: hidden !important;
         }
 
-        /* Set the colored display area to exactly 80% of the screen height */
-        iframe[title="streamlit_app.components_v1.html"] {
-            height: 80vh !important; 
+        /* 3. Force the iframe to fit completely inside that tab, preventing the 800px overflow */
+        iframe {
+            height: 100% !important; 
             width: 100vw !important;
             border: none !important;
             overflow: hidden !important;
@@ -114,7 +112,7 @@ with tab_display:
             }}
             body, html {{
                 margin: 0; padding: 0;
-                width: 100%; height: 100vh; /* Matches the 80vh iframe perfectly */
+                width: 100%; height: 100%; /* Height is now strictly 100% of the iframe */
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 background-color: var(--bg-color);
                 color: var(--font-color);
@@ -125,7 +123,7 @@ with tab_display:
                 overflow: hidden; 
             }}
             
-            /* CONTENT AREA: Takes up all available space dynamically */
+            /* CONTENT AREA: Fills all remaining space */
             #content {{
                 flex: 1; 
                 display: flex;
@@ -137,7 +135,7 @@ with tab_display:
             }}
             
             #date-label {{ 
-                font-size: min(5vw, 7vh); 
+                font-size: min(5vw, 6vh); 
                 margin-bottom: 2vh; 
                 opacity: 0.9; 
                 font-weight: 500;
@@ -154,14 +152,14 @@ with tab_display:
                 font-weight: 700; 
             }}
             
-            /* BUTTON AREA: Fixes the cut-off issue */
+            /* BUTTON AREA: Stuck permanently to the bottom */
             #controls {{
-                flex-shrink: 0; 
+                flex-shrink: 0; /* Prevents this box from being squished */
                 display: flex;
                 justify-content: center;
                 align-items: stretch;
                 gap: 1vw;
-                padding: 2vh 1vw;
+                padding: 1.5vh 1vw;
                 background: rgba(0,0,0,0.15);
                 width: 100%;
             }}
@@ -170,27 +168,22 @@ with tab_display:
                 flex: 1; 
                 min-width: 0; 
                 padding: 1.5vh 0; 
-                font-size: min(2.5vw, 3vh); 
+                font-size: min(2.5vw, 3.5vh); /* Scales dynamically */
                 cursor: pointer;
                 border: none; 
-                border-radius: 10px; 
+                border-radius: 8px; 
                 background-color: rgba(255, 255, 255, 0.9); 
                 color: #000000;
                 font-weight: 700;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.3);
                 transition: transform 0.1s ease-in-out, background-color 0.2s;
                 
-                /* Keeps text on one line neatly */
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
             }}
-            button:active {{ 
-                transform: scale(0.92); 
-            }}
-            button:hover {{
-                background-color: #ffffff;
-            }}
+            button:active {{ transform: scale(0.92); }}
+            button:hover {{ background-color: #ffffff; }}
         </style>
     </head>
     <body>
@@ -254,4 +247,5 @@ with tab_display:
     </html>
     """
     
-    st.components.v1.html(html_code, height=800)
+    # The height parameter here doesn't matter anymore, our CSS intercepts and forces it to fit perfectly!
+    st.components.v1.html(html_code, height=600)
