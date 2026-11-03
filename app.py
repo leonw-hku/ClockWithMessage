@@ -5,7 +5,7 @@ import os
 # --- CONFIGURATION ---
 st.set_page_config(page_title="Dynamic Lab Clock", layout="wide")
 
-# AGGRESSIVE FULLSCREEN HACK - Prevents any scrolling and fixes bottom cut-off
+# AGGRESSIVE FULLSCREEN HACK - Adjusted to 80% height
 st.markdown("""
     <style>
         /* Remove default padding */
@@ -26,10 +26,9 @@ st.markdown("""
             overflow: hidden !important;
         }
 
-        /* Force the HTML container to perfectly fit screen minus the tab bar */
-        /* Changed to 95px to guarantee the buttons are not pushed off the bottom */
+        /* Set the colored display area to exactly 80% of the screen height */
         iframe[title="streamlit_app.components_v1.html"] {
-            height: calc(100vh - 95px) !important;
+            height: 80vh !important; 
             width: 100vw !important;
             border: none !important;
             overflow: hidden !important;
@@ -115,7 +114,7 @@ with tab_display:
             }}
             body, html {{
                 margin: 0; padding: 0;
-                width: 100%; height: 100vh; /* Locks exactly to iframe height */
+                width: 100%; height: 100vh; /* Matches the 80vh iframe perfectly */
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 background-color: var(--bg-color);
                 color: var(--font-color);
@@ -157,7 +156,7 @@ with tab_display:
             
             /* BUTTON AREA: Fixes the cut-off issue */
             #controls {{
-                flex-shrink: 0; /* CRITICAL: Prevents browser from ever squishing this off-screen */
+                flex-shrink: 0; 
                 display: flex;
                 justify-content: center;
                 align-items: stretch;
@@ -170,8 +169,8 @@ with tab_display:
             button {{
                 flex: 1; 
                 min-width: 0; 
-                padding: 1.5vh 0; /* Vertical padding controls height */
-                font-size: min(2.5vw, 3vh); /* Scales dynamically */
+                padding: 1.5vh 0; 
+                font-size: min(2.5vw, 3vh); 
                 cursor: pointer;
                 border: none; 
                 border-radius: 10px; 
