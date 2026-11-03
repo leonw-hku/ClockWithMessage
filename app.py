@@ -24,7 +24,7 @@ st.markdown("""
             overflow: hidden !important;
         }
 
-        /* 3. Force the iframe to fit completely inside that tab, preventing the 800px overflow */
+        /* 3. Force the iframe to fit completely inside that tab */
         iframe {
             height: 100% !important; 
             width: 100vw !important;
@@ -112,7 +112,7 @@ with tab_display:
             }}
             body, html {{
                 margin: 0; padding: 0;
-                width: 100%; height: 100%; /* Height is now strictly 100% of the iframe */
+                width: 100%; height: 100%;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 background-color: var(--bg-color);
                 color: var(--font-color);
@@ -123,7 +123,6 @@ with tab_display:
                 overflow: hidden; 
             }}
             
-            /* CONTENT AREA: Fills all remaining space */
             #content {{
                 flex: 1; 
                 display: flex;
@@ -134,27 +133,29 @@ with tab_display:
                 overflow: hidden;
             }}
             
+            /* DATE AND CLOCK ARE NOW SIZED IDENTICALLY (capped at 22vh) */
             #date-label {{ 
-                font-size: min(5vw, 6vh); 
+                font-size: min(9vw, 22vh); /* 9vw prevents overflow on vertical screens */
+                font-weight: 800; 
+                line-height: 0.85;
                 margin-bottom: 2vh; 
-                opacity: 0.9; 
-                font-weight: 500;
+                opacity: 0.95; 
+                letter-spacing: -0.1vw;
             }}
             #clock-label {{ 
-                font-size: min(22vw, 35vh); 
+                font-size: min(20vw, 22vh); /* 20vw fits the shorter text on vertical screens */
                 font-weight: 800; 
                 line-height: 0.85; 
-                margin-bottom: 2vh; 
+                margin-bottom: 3vh; 
                 letter-spacing: -0.2vw;
             }}
             #msg-label {{ 
-                font-size: min(8vw, 15vh); 
+                font-size: min(8vw, 12vh); 
                 font-weight: 700; 
             }}
             
-            /* BUTTON AREA: Stuck permanently to the bottom */
             #controls {{
-                flex-shrink: 0; /* Prevents this box from being squished */
+                flex-shrink: 0; 
                 display: flex;
                 justify-content: center;
                 align-items: stretch;
@@ -168,7 +169,7 @@ with tab_display:
                 flex: 1; 
                 min-width: 0; 
                 padding: 1.5vh 0; 
-                font-size: min(2.5vw, 3.5vh); /* Scales dynamically */
+                font-size: min(2.5vw, 3.5vh); 
                 cursor: pointer;
                 border: none; 
                 border-radius: 8px; 
@@ -222,7 +223,10 @@ with tab_display:
                 document.getElementById('clock-label').innerText = `${{hh}}:${{mm}}:${{ss}}`;
 
                 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                
+                // --- CHANGED TO SHORT FORM WEEKDAYS ---
+                const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                
                 const dd = String(now.getDate()).padStart(2, '0');
                 const mmm = months[now.getMonth()];
                 const yyyy = now.getFullYear();
@@ -247,5 +251,4 @@ with tab_display:
     </html>
     """
     
-    # The height parameter here doesn't matter anymore, our CSS intercepts and forces it to fit perfectly!
     st.components.v1.html(html_code, height=600)
