@@ -36,33 +36,31 @@ st.markdown("""
 
 SETTINGS_FILE = 'settings.json'
 
+# --- HARDCODED DEFAULTS FROM SCREENSHOT ---
 DEFAULT_MODES = [
-    {"name": "Open", "bg": "#00d100", "fg": "#ffffff", "msg": "Lab Open", "time": ""},
-    {"name": "Closed", "bg": "#8b0000", "fg": "#ffffff", "msg": "Lab Close", "time": "17:30"},
-    {"name": "Break", "bg": "#ffa500", "fg": "#000000", "msg": "On Break", "time": "12:00"},
-    {"name": "Meeting", "bg": "#0000ff", "fg": "#ffffff", "msg": "In Meeting", "time": "14:00"},
-    {"name": "Maintenance", "bg": "#333333", "fg": "#ffffff", "msg": "Maintenance", "time": ""}
+    {"name": "Open", "bg": "#198754", "fg": "#ffffff", "msg": "Lab Open", "time": ""},
+    {"name": "Closed", "bg": "#8b0000", "fg": "#ffffff", "msg": "Lab Closed", "time": "17:50"},
+    {"name": "Break", "bg": "#ffc107", "fg": "#000000", "msg": "On Break", "time": "13:00"},
+    {"name": "Busy Lv1", "bg": "#fd7e14", "fg": "#ffffff", "msg": "Extremely Busy", "time": ""},
+    {"name": "Busy Lv100", "bg": "#dc3545", "fg": "#ffffff", "msg": "Extremely Busy Pro Max", "time": ""}
 ]
 
 DEFAULT_FONTS = {
-    "date": "min(9vw, 22vh)",
-    "time": "min(20vw, 22vh)",
-    "msg": "min(8vw, 12vh)"
+    "date": "min(15vw, 15vh)",
+    "time": "min(45vw, 45vh)",
+    "msg": "min(15vw, 15vh)"
 }
 
 def load_settings():
-    # If no file exists, create the default one
     if not os.path.exists(SETTINGS_FILE):
         default_data = {"modes": DEFAULT_MODES, "fonts": DEFAULT_FONTS}
         with open(SETTINGS_FILE, 'w') as f:
             json.dump(default_data, f, indent=4)
         return default_data
         
-    # Read existing file
     with open(SETTINGS_FILE, 'r') as f:
         data = json.load(f)
         
-        # MIGRATION: If the user has the older version (list instead of dict), upgrade it!
         if isinstance(data, list):
             data = {"modes": data, "fonts": DEFAULT_FONTS}
             save_settings(data)
@@ -77,7 +75,6 @@ def save_settings(data):
 # --- APP LAYOUT ---
 tab_display, tab_settings = st.tabs(["⏱️ Clock Display", "⚙️ Settings"])
 
-# Load current settings globally
 current_settings = load_settings()
 current_modes = current_settings.get("modes", DEFAULT_MODES)
 current_fonts = current_settings.get("fonts", DEFAULT_FONTS)
@@ -86,7 +83,6 @@ current_fonts = current_settings.get("fonts", DEFAULT_FONTS)
 with tab_settings:
     with st.form("settings_form"):
         
-        # --- FONT SETTINGS SECTION ---
         st.subheader("1. Font Sizes (CSS)")
         st.caption("You can use CSS dynamic sizing like `min(9vw, 22vh)` or fixed sizes like `100px` or `5em`.")
         
@@ -97,7 +93,6 @@ with tab_settings:
 
         st.divider()
 
-        # --- MODE SETTINGS SECTION ---
         st.subheader("2. Clock Modes")
         st.write("Leave 'Auto Start' blank if you do not want it to trigger automatically.")
         
@@ -119,13 +114,13 @@ with tab_settings:
             bg = cols[2].color_picker("BG", value=mode.get("bg", "#000000"), key=f"bg_{i}", label_visibility="collapsed")
             fg = cols[3].color_picker("FG", value=mode.get("fg", "#ffffff"), key=f"fg_{i}", label_visibility="collapsed")
             msg = cols[4].text_input("Msg", value=mode.get("msg", ""), key=f"msg_{i}", label_visibility="collapsed")
-            time_val = cols[5].text_input("Time", value=mode.get("time", ""), key=f"time_{i}", placeholder="e.g. 14:30", label_visibility="collapsed")
+            # Removed the placeholder='e.g. 14:30' as requested
+            time_val = cols[5].text_input("Time", value=mode.get("time", ""), key=f"time_{i}", label_visibility="collapsed")
             
             new_modes.append({
                 "name": name, "bg": bg, "fg": fg, "msg": msg, "time": time_val.strip()
             })
             
-        # Submit Button
         if st.form_submit_button("💾 Save All Settings"):
             new_settings_data = {
                 "modes": new_modes,
@@ -141,7 +136,6 @@ with tab_settings:
 
 # --- 2. DISPLAY TAB ---
 with tab_display:
-    # Pass ONLY the modes array to JS so the buttons generate correctly
     settings_json = json.dumps(current_modes)
     
     html_code = f"""
@@ -179,9 +173,8 @@ with tab_display:
                 overflow: hidden;
             }}
             
-            /* DYNAMIC FONTS LOADED FROM SETTINGS */
             #date-label {{ 
-                font-size: {current_fonts.get('date', 'min(9vw, 22vh)')}; 
+                font-size: {current_fonts.get('date', 'min(15vw, 15vh)')}; 
                 font-weight: 800; 
                 line-height: 0.85;
                 margin-bottom: 2vh; 
@@ -189,14 +182,14 @@ with tab_display:
                 letter-spacing: -0.1vw;
             }}
             #clock-label {{ 
-                font-size: {current_fonts.get('time', 'min(20vw, 22vh)')}; 
+                font-size: {current_fonts.get('time', 'min(45vw, 45vh)')}; 
                 font-weight: 800; 
                 line-height: 0.85; 
                 margin-bottom: 3vh; 
                 letter-spacing: -0.2vw;
             }}
             #msg-label {{ 
-                font-size: {current_fonts.get('msg', 'min(8vw, 12vh)')}; 
+                font-size: {current_fonts.get('msg', 'min(15vw, 15vh)')}; 
                 font-weight: 700; 
             }}
             
