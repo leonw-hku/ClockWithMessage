@@ -5,26 +5,31 @@ import os
 # --- CONFIGURATION ---
 st.set_page_config(page_title="Dynamic Lab Clock", layout="wide")
 
-# STREAMLIT FULLSCREEN HACK
+# AGGRESSIVE FULLSCREEN HACK - Prevents any scrolling
 st.markdown("""
     <style>
+        /* Remove all default padding from Streamlit */
         .block-container { 
             padding: 0rem !important; 
             max-width: 100% !important; 
+            overflow: hidden !important;
         }
-        header { visibility: hidden; }
-        footer { visibility: hidden; }
+        header { visibility: hidden; height: 0px !important; }
+        footer { visibility: hidden; height: 0px !important; }
         
-        /* Forces the tab content area to stretch */
+        /* Remove padding inside the tabs and fix height to prevent scroll */
         .stTabs [data-baseweb="tab-panel"] {
             padding: 0 !important;
+            height: calc(100vh - 50px); /* 50px accounts for the tab headers */
+            overflow: hidden !important;
         }
 
-        /* Forces the HTML iframe to perfectly fit the screen height minus the tab bar */
+        /* Force the HTML container to perfectly fit the remaining screen height */
         iframe[title="streamlit_app.components_v1.html"] {
-            height: calc(100vh - 60px) !important;
+            height: calc(100vh - 55px) !important;
             width: 100vw !important;
             border: none !important;
+            overflow: hidden !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -109,31 +114,32 @@ with tab_display:
                 background-color: var(--bg-color);
                 color: var(--font-color);
                 transition: background-color 0.5s ease, color 0.5s ease;
+                
+                /* Lock the body to exactly the window size */
                 display: flex;
                 flex-direction: column;
-                overflow: hidden;
+                overflow: hidden; 
             }}
             
-            /* Center Content stretches to fill space automatically */
+            /* CONTENT AREA: Takes up all available space dynamically */
             #content {{
-                flex-grow: 1;
+                flex: 1; 
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
                 text-align: center;
-                padding: 2vw;
+                overflow: hidden;
             }}
             
-            /* MASSIVE, Dynamic Sizing */
             #date-label {{ 
-                font-size: min(5vw, 8vh); 
+                font-size: min(5vw, 7vh); 
                 margin-bottom: 2vh; 
                 opacity: 0.9; 
                 font-weight: 500;
             }}
             #clock-label {{ 
-                font-size: min(20vw, 32vh); 
+                font-size: min(22vw, 35vh); 
                 font-weight: 800; 
                 line-height: 0.85; 
                 margin-bottom: 2vh; 
@@ -144,32 +150,36 @@ with tab_display:
                 font-weight: 700; 
             }}
             
-            /* SMALLER, Fluid, Non-Fixed Buttons */
+            /* BUTTON AREA: Fixed percentage height, perfectly side-by-side */
             #controls {{
+                height: 10vh; /* Always exactly 10% of the screen height */
+                min-height: 50px;
                 display: flex;
-                flex-wrap: wrap;       
                 justify-content: center;
-                align-items: center;
-                gap: 1vw;              /* Tighter gap */
-                padding: 1.5vh 2vw;    /* Reduced padding footprint */
+                align-items: stretch; /* Stretches buttons to fill the bar height */
+                gap: 1vw;
+                padding: 1.5vh 1vw;
                 background: rgba(0,0,0,0.15);
-                width: 100%;
                 box-sizing: border-box;
+                width: 100%;
             }}
             
             button {{
-                padding: 1vh 1.5vw;
-                font-size: min(1.8vw, 2.5vh); /* Smaller text on buttons */
+                flex: 1; /* Forces all buttons to be exactly equal width */
+                min-width: 0; /* Prevents text from forcing button wider than screen */
+                font-size: min(2vw, 3vh); /* Dynamically shrinks text so it fits */
                 cursor: pointer;
                 border: none; 
-                border-radius: 8px; /* Standard pill shape */
+                border-radius: 8px; 
                 background-color: rgba(255, 255, 255, 0.9); 
                 color: #000000;
                 font-weight: 700;
                 box-shadow: 0 3px 6px rgba(0,0,0,0.3);
                 transition: transform 0.1s ease-in-out, background-color 0.2s;
-                flex-grow: 1; 
-                max-width: 160px; /* Forces them to stay small rather than stretch wildly */
+                /* Text truncation if screen gets insanely tiny */
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }}
             button:active {{ 
                 transform: scale(0.92); 
@@ -207,6 +217,8 @@ with tab_display:
             }});
 
             function updateClock() {{
+                // new Date() pulls directly from your computer OS internal clock
+                // It is accurate to the millisecond, even if the PC wakes up from sleep!
                 const now = new Date();
                 
                 const hh = String(now.getHours()).padStart(2, '0');
@@ -240,4 +252,5 @@ with tab_display:
     </html>
     """
     
+    # st.components height doesn't matter anymore, the CSS forces it to match the screen!
     st.components.v1.html(html_code, height=800)
